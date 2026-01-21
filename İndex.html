@@ -2,45 +2,72 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Benim Gemini Botum</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gardaş Gemini</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; }
-        #chat-box { width: 400px; height: 500px; border: 1px solid #ccc; overflow-y: auto; background: white; padding: 10px; margin-top: 20px; border-radius: 10px; }
-        .input-area { margin-top: 10px; display: flex; width: 400px; }
-        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; margin-left: 5px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #chat-container { width: 90%; max-width: 500px; background: #2d2d2d; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; }
+        #chat-box { height: 400px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #444; }
+        .message { padding: 10px 15px; border-radius: 10px; max-width: 80%; line-height: 1.4; }
+        .user-msg { background: #007bff; align-self: flex-end; color: white; }
+        .bot-msg { background: #444; align-self: flex-start; color: #ddd; }
+        .input-area { display: flex; padding: 15px; background: #252525; }
+        input { flex: 1; padding: 12px; border: none; border-radius: 5px; background: #3d3d3d; color: white; outline: none; }
+        button { margin-left: 10px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #218838; }
     </style>
 </head>
 <body>
 
-    <h2>Gardaş Sohbet Botu</h2>
-    <div id="chat-box"></div>
-    <div class="input-area">
-        <input type="text" id="user-input" placeholder="Bir şey yaz gardaş...">
-        <button onclick="sendMessage()">Gönder</button>
+    <h2 style="margin-bottom: 10px;">Gardaş Sohbet Botu</h2>
+    
+    <div id="chat-container">
+        <div id="chat-box">
+            <div class="message bot-msg">Selam gardaş! API bağlandı, bir şey yaz bakalım.</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Mesajını yaz gardaş..." onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">Gönder</button>
+        </div>
     </div>
 
     <script>
-        const API_KEY = 'AIzaSyBGlxRsddafO9359paH2NqQJQgvOek109k';
+        // Senin API anahtarın buraya eklendi
+        const API_KEY = 'AIzaSyBGlxRsddafO9359paH2NqQJQgvOek109k'; 
 
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const chatBox = document.getElementById('chat-box');
-            if(!input.value) return;
+            const message = input.value.trim();
 
-            chatBox.innerHTML += `<p><strong>Sen:</strong> ${input.value}</p>`;
-            
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: input.value }] }] })
-            });
+            if (!message) return;
 
-            const data = await response.json();
-            const botReply = data.candidates[0].content.parts[0].text;
-            
-            chatBox.innerHTML += `<p><strong>Bot:</strong> ${botReply}</p>`;
+            // Kullanıcı mesajını ekrana bas
+            chatBox.innerHTML += `<div class="message user-msg">${message}</div>`;
             input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: message }] }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    const botReply = data.candidates[0].content.parts[0].text;
+                    chatBox.innerHTML += `<div class="message bot-msg">${botReply}</div>`;
+                } else {
+                    chatBox.innerHTML += `<div class="message bot-msg">Hata oluştu gardaş, API anahtarını kontrol et.</div>`;
+                }
+            } catch (error) {
+                chatBox.innerHTML += `<div class="message bot-msg">Bağlantı hatası gardaş!</div>`;
+            }
+
             chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
